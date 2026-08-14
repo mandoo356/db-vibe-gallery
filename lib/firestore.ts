@@ -10,6 +10,7 @@ export type AppItem = {
   url: string
   description: string
   imageUrl?: string
+  tags?: string[]
   createdAt: any
   averageRating: number
   reviewCount: number
@@ -35,7 +36,7 @@ export async function fetchApp(id: string): Promise<AppItem | null> {
   return { id: snap.id, ...snap.data() } as AppItem
 }
 
-export async function createApp(data: Pick<AppItem, 'name' | 'url' | 'description' | 'imageUrl'>) {
+export async function createApp(data: Pick<AppItem, 'name' | 'url' | 'description' | 'imageUrl' | 'tags'>) {
   return addDoc(collection(db, 'apps'), {
     ...data,
     averageRating: 0,

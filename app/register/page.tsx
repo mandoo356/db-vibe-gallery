@@ -7,7 +7,7 @@ import { createApp } from '@/lib/firestore'
 
 export default function RegisterPage() {
   const router = useRouter()
-  const [form, setForm] = useState({ name: '', url: '', imageUrl: '', description: '', password: '' })
+  const [form, setForm] = useState({ name: '', url: '', imageUrl: '', tags: '', description: '', password: '' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -26,7 +26,13 @@ export default function RegisterPage() {
 
     setLoading(true)
     try {
-      await createApp({ name: form.name, url: form.url, description: form.description, imageUrl: form.imageUrl || undefined })
+      await createApp({
+        name: form.name,
+        url: form.url,
+        description: form.description,
+        imageUrl: form.imageUrl || undefined,
+        tags: form.tags ? form.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
+      })
       router.push('/')
     } catch {
       setError('등록 중 오류가 발생했습니다. 다시 시도해주세요.')
@@ -86,6 +92,18 @@ export default function RegisterPage() {
                   className="w-full bg-surface border border-surface-variant rounded-lg pl-10 pr-4 py-2 text-text-primary focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all placeholder:text-text-tertiary"
                 />
               </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-text-secondary mb-1" htmlFor="tags">기술 태그 <span className="text-text-tertiary font-normal">(선택, 쉼표로 구분)</span></label>
+              <input
+                id="tags"
+                type="text"
+                placeholder="예: React, Python, TypeScript"
+                value={form.tags}
+                onChange={e => setForm(f => ({ ...f, tags: e.target.value }))}
+                className="w-full bg-surface border border-surface-variant rounded-lg px-4 py-2 text-text-primary focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all placeholder:text-text-tertiary"
+              />
             </div>
 
             <div>
