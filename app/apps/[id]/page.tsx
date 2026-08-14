@@ -83,9 +83,13 @@ export default function AppDetailPage() {
       <main className="flex-grow w-full max-w-screen-xl mx-auto px-8 py-16">
         {/* App Header */}
         <section className="flex flex-col md:flex-row gap-12 items-start mb-16">
-          <div className="w-32 h-32 rounded-xl bg-primary-fixed flex items-center justify-center text-primary text-5xl font-bold flex-shrink-0">
-            {app.name.charAt(0).toUpperCase()}
-          </div>
+          {app.imageUrl ? (
+            <img src={app.imageUrl} alt={app.name} className="w-32 h-32 rounded-xl object-cover flex-shrink-0" />
+          ) : (
+            <div className="w-32 h-32 rounded-xl bg-primary-fixed flex items-center justify-center text-primary text-5xl font-bold flex-shrink-0">
+              {app.name.charAt(0).toUpperCase()}
+            </div>
+          )}
           <div className="flex-grow">
             <h1 className="text-5xl font-bold text-text-primary mb-4">{app.name}</h1>
             <p className="text-lg text-text-secondary mb-6 max-w-2xl">{app.description}</p>

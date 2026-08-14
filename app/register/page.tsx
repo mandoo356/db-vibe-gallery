@@ -7,7 +7,7 @@ import { createApp } from '@/lib/firestore'
 
 export default function RegisterPage() {
   const router = useRouter()
-  const [form, setForm] = useState({ name: '', url: '', description: '', password: '' })
+  const [form, setForm] = useState({ name: '', url: '', imageUrl: '', description: '', password: '' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -26,7 +26,7 @@ export default function RegisterPage() {
 
     setLoading(true)
     try {
-      await createApp({ name: form.name, url: form.url, description: form.description })
+      await createApp({ name: form.name, url: form.url, description: form.description, imageUrl: form.imageUrl || undefined })
       router.push('/')
     } catch {
       setError('등록 중 오류가 발생했습니다. 다시 시도해주세요.')
@@ -68,6 +68,21 @@ export default function RegisterPage() {
                   placeholder="https://"
                   value={form.url}
                   onChange={e => setForm(f => ({ ...f, url: e.target.value }))}
+                  className="w-full bg-surface border border-surface-variant rounded-lg pl-10 pr-4 py-2 text-text-primary focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all placeholder:text-text-tertiary"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-text-secondary mb-1" htmlFor="imageUrl">앱 스크린샷 URL <span className="text-text-tertiary font-normal">(선택)</span></label>
+              <div className="relative">
+                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary text-xl">image</span>
+                <input
+                  id="imageUrl"
+                  type="url"
+                  placeholder="https://... (앱 미리보기 이미지 URL)"
+                  value={form.imageUrl}
+                  onChange={e => setForm(f => ({ ...f, imageUrl: e.target.value }))}
                   className="w-full bg-surface border border-surface-variant rounded-lg pl-10 pr-4 py-2 text-text-primary focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all placeholder:text-text-tertiary"
                 />
               </div>

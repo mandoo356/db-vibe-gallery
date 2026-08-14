@@ -23,14 +23,19 @@ function StarRating({ rating }: { rating: number }) {
 
 function AppCard({ app }: { app: AppItem }) {
   return (
-    <article className="bg-surface-container-lowest rounded-xl border border-surface-variant p-6 flex flex-col h-full hover:-translate-y-1 transition-transform duration-300 shadow-sm hover:shadow-md">
-      <div className="flex items-start justify-between mb-3">
-        <div className="w-12 h-12 rounded-lg bg-primary-fixed flex items-center justify-center text-primary font-bold text-lg">
+    <article className="bg-surface-container-lowest rounded-xl border border-surface-variant flex flex-col h-full hover:-translate-y-1 transition-transform duration-300 shadow-sm hover:shadow-md overflow-hidden">
+      {app.imageUrl ? (
+        <img src={app.imageUrl} alt={app.name} className="w-full h-40 object-cover" />
+      ) : (
+        <div className="w-full h-40 bg-primary-fixed flex items-center justify-center text-primary font-bold text-4xl">
           {app.name.charAt(0).toUpperCase()}
         </div>
+      )}
+      <div className="p-6 flex flex-col flex-grow">
+      <div className="flex items-start justify-between mb-3">
+        <h3 className="text-lg font-semibold text-text-primary">{app.name}</h3>
         <StarRating rating={app.averageRating} />
       </div>
-      <h3 className="text-lg font-semibold text-text-primary mb-2">{app.name}</h3>
       <p className="text-sm text-text-secondary flex-grow mb-4 line-clamp-3">{app.description}</p>
       <div className="flex gap-2">
         <Link
@@ -47,6 +52,7 @@ function AppCard({ app }: { app: AppItem }) {
         >
           앱 방문
         </a>
+      </div>
       </div>
     </article>
   )

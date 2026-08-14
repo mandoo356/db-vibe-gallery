@@ -9,6 +9,7 @@ export type AppItem = {
   name: string
   url: string
   description: string
+  imageUrl?: string
   createdAt: any
   averageRating: number
   reviewCount: number
@@ -34,7 +35,7 @@ export async function fetchApp(id: string): Promise<AppItem | null> {
   return { id: snap.id, ...snap.data() } as AppItem
 }
 
-export async function createApp(data: Pick<AppItem, 'name' | 'url' | 'description'>) {
+export async function createApp(data: Pick<AppItem, 'name' | 'url' | 'description' | 'imageUrl'>) {
   return addDoc(collection(db, 'apps'), {
     ...data,
     averageRating: 0,
@@ -52,13 +53,12 @@ export async function removeApp(id: string) {
 }
 
 export async function fetchReviews(appId: string): Promise<Review[]> {
-  const q = query(
-    collection(db, 'reviews'),
-    where('appId', '==', appId),
-    orderBy('createdAt', 'desc'),
-  )
+  // orderBy + where on different fields requires a composite index — sort client-side instead
+  const q = query(collection(db, 'reviews'), where('appId', '==', appId))
   const snap = await getDocs(q)
-  return snap.docs.map(d => ({ id: d.id, ...d.data() } as Review))
+  return snap.docs
+    .map(d => ({ id: d.id, ...d.data() } as Review))
+    .sort((a, b) => (b.createdAt?.seconds ?? 0) - (a.createdAt?.seconds ?? 0))
 }
 
 export async function createReview(appId: string, rating: number, text: string) {
