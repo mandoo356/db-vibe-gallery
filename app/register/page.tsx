@@ -114,7 +114,7 @@ export default function RegisterPage() {
                 placeholder="앱의 주요 기능과 목적을 간단히 설명해주세요."
                 value={form.description}
                 onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-                className="w-full bg-surface border border-surface-variant rounded-lg px-4 py-2 text-text-primary focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all resize-none placeholder:text-text-tertiary"
+                className="w-full bg-surface-container-low border border-surface-variant rounded-lg px-4 py-3 text-text-primary focus:border-primary-container outline-none resize-y placeholder:text-text-tertiary min-h-[120px]"
               />
             </div>
 
