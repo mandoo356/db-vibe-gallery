@@ -1,30 +1,42 @@
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0');
 
 @theme {
   --font-sans: 'Inter', sans-serif;
 
-  --color-primary: #630ed4;
+  /* Purple brand */
+  --color-primary: #a855f7;
   --color-on-primary: #ffffff;
-  --color-primary-container: #7c3aed;
+  --color-primary-container: #a855f7;
   --color-on-primary-container: #ffffff;
-  --color-primary-fixed: #eaddff;
-  --color-secondary: #5c5f61;
-  --color-secondary-container: #e0e3e5;
-  --color-surface: #f9f9f9;
-  --color-surface-container-lowest: #ffffff;
-  --color-surface-container-low: #f3f3f4;
-  --color-surface-container: #eeeeee;
-  --color-surface-container-high: #e8e8e8;
-  --color-surface-variant: #e2e2e2;
-  --color-on-surface: #1a1c1c;
-  --color-on-surface-variant: #4a4455;
-  --color-text-primary: #0F172A;
-  --color-text-secondary: #475569;
-  --color-text-tertiary: #94A3B8;
-  --color-error: #ba1a1a;
-  --color-background: #f9f9f9;
+  --color-primary-fixed: #1e0a3c;
+
+  /* Dark surfaces */
+  --color-surface: #000000;
+  --color-surface-container-lowest: #0a0a12;
+  --color-surface-container-low: #111120;
+  --color-surface-container: #1a1a2e;
+  --color-surface-container-high: #222236;
+  --color-surface-variant: rgba(255,255,255,0.08);
+
+  /* Text */
+  --color-text-primary: #f1f5f9;
+  --color-text-secondary: #94a3b8;
+  --color-text-tertiary: #475569;
+  --color-on-surface: #f1f5f9;
+  --color-on-surface-variant: #94a3b8;
+  --color-secondary: #94a3b8;
+  --color-secondary-container: #1a1a2e;
+
+  /* Error */
+  --color-error: #f87171;
+
+  /* Background */
+  --color-background: #000000;
+}
+
+body {
+  background: #000000;
+  color: #f1f5f9;
 }
 
 .material-symbols-outlined {
@@ -32,4 +44,11 @@
 }
 .icon-fill {
   font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+/* Glass card effect */
+.glass {
+  background: rgba(255,255,255,0.04);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.08);
 }

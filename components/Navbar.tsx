@@ -3,49 +3,38 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
 const links = [
-  { href: '/', label: '홈' },
-  { href: '/register', label: '앱 등록' },
-  { href: '/admin', label: '관리자' },
   { href: '/', label: '갤러리' },
+  { href: '/register', label: '앱 등록' },
 ]
 
 export default function Navbar() {
   const pathname = usePathname()
   return (
-    <header className="bg-surface-container-lowest border-b border-surface-variant shadow-sm w-full top-0 sticky z-50">
-      <div className="flex justify-between items-center w-full px-8 max-w-screen-xl mx-auto h-20">
-        <Link href="/" className="text-2xl font-bold text-primary">
+    <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/5" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(20px)' }}>
+      <div className="flex justify-between items-center w-full px-8 max-w-screen-xl mx-auto h-16">
+        <Link href="/" className="text-xl font-bold" style={{ background: 'linear-gradient(135deg, #a855f7, #6366f1)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
           DB Vibe Gallery
         </Link>
-        <nav className="hidden md:flex items-center gap-8 h-full">
-          {links.map((l, i) => (
+        <nav className="flex items-center gap-6">
+          {links.map(l => (
             <Link
-              key={i}
+              key={l.href}
               href={l.href}
-              className={`h-full flex items-center text-sm transition-colors ${
-                pathname === l.href && l.href !== '/' || (l.href === '/' && (pathname === '/' || l.label === '홈' && pathname === '/'))
-                  ? 'text-primary font-bold border-b-2 border-primary'
-                  : 'text-secondary hover:text-primary'
+              className={`text-sm font-medium transition-colors ${
+                pathname === l.href ? 'text-white' : 'text-white/50 hover:text-white/80'
               }`}
             >
               {l.label}
             </Link>
           ))}
+          <Link
+            href="/register"
+            className="text-sm font-semibold px-4 py-2 rounded-lg transition-all hover:opacity-90"
+            style={{ background: 'linear-gradient(135deg, #a855f7, #6366f1)', color: '#fff' }}
+          >
+            + 앱 등록
+          </Link>
         </nav>
-        <div className="flex items-center gap-2">
-          <button className="p-2 text-secondary hover:bg-surface-container rounded-lg transition-colors">
-            <span className="material-symbols-outlined">search</span>
-          </button>
-          <button className="p-2 text-secondary hover:bg-surface-container rounded-lg transition-colors">
-            <span className="material-symbols-outlined">notifications</span>
-          </button>
-          <button className="p-2 text-secondary hover:bg-surface-container rounded-lg transition-colors hidden sm:block">
-            <span className="material-symbols-outlined">account_circle</span>
-          </button>
-          <button className="ml-2 bg-primary-container text-on-primary-container text-sm font-medium px-6 py-2 rounded-lg hover:opacity-90 transition-opacity active:scale-95">
-            로그인
-          </button>
-        </div>
       </div>
     </header>
   )
