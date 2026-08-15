@@ -1,7 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { NextRequest, NextResponse } from 'next/server'
 
-// 로그인 화면만 나오는 URL 패턴
 const AUTH_REQUIRED_PATTERNS = [
   'script.google.com',
   'docs.google.com',
@@ -14,33 +13,9 @@ function requiresAuth(url: string): boolean {
   return AUTH_REQUIRED_PATTERNS.some(p => url.includes(p))
 }
 
-// 캡처 후 파일 크기로 흰 화면 판별
-// 2560×1600 PNG가 50KB 미만이면 내용 없는 흰/빈 화면
-const MIN_SCREENSHOT_SIZE = 50_000
-
-async function fetchScreenshot(url: string, extraParams: Record<string, string> = {}): Promise<string> {
-  try {
-    const qs = new URLSearchParams({
-      url,
-      screenshot: 'true',
-      meta: 'false',
-      'screenshot.delay': '4000',   // 4초 대기 (Firebase 앱 대응)
-      ...extraParams,
-    })
-    const res = await fetch(`https://api.microlink.io/?${qs}`, { next: { revalidate: 0 } })
-    const data = await res.json()
-    if (data.status !== 'success') return ''
-
-    const shot = data.data?.screenshot
-    if (!shot?.url) return ''
-
-    // 파일 크기가 너무 작으면 흰 화면 → 버림
-    if ((shot.size ?? 0) < MIN_SCREENSHOT_SIZE) return ''
-
-    return shot.url
-  } catch {
-    return ''
-  }
+// thum.io: 실제 Chrome 헤드리스로 SPA 렌더링 후 캡처, 무료·API 키 불필요
+function thumioUrl(url: string, width: number, crop: number): string {
+  return `https://image.thum.io/get/width/${width}/crop/${crop}/${url}`
 }
 
 export async function POST(req: NextRequest) {
@@ -57,18 +32,13 @@ export async function POST(req: NextRequest) {
   const pageMeta = metaRes?.data?.description ?? ''
   const ogImage: string = metaRes?.data?.image?.url ?? ''
 
-  // 2. 스크린샷 (인증 필요 URL은 건너뜀 / 흰 화면은 자동 필터)
-  let desktopShot = ''
-  let mobileShot = ''
-  if (!requiresAuth(url)) {
-    ;[desktopShot, mobileShot] = await Promise.all([
-      fetchScreenshot(url, { 'viewport.width': '1280', 'viewport.height': '800' }),
-      fetchScreenshot(url, { 'viewport.width': '390',  'viewport.height': '844' }),
-    ])
-  }
-
-  // og:image → 데스크탑 캡처 → 모바일 캡처 순서로 조합
-  const screenshots = [ogImage, desktopShot, mobileShot].filter(Boolean)
+  // 2. thum.io로 스크린샷 URL 구성 (인증 필요 URL은 건너뜀)
+  const authReq = requiresAuth(url)
+  const screenshots = [
+    ogImage,
+    authReq ? '' : thumioUrl(url, 1280, 800),
+    authReq ? '' : thumioUrl(url, 390, 844),
+  ].filter(Boolean)
   const screenshot = screenshots[0] ?? ''
 
   // 3. Claude 한국어 설명 생성

@@ -104,7 +104,15 @@ export default function AppDetailPage() {
     </div>
   )
 
-  const images: string[] = (app.imageUrls?.length ? app.imageUrls : app.imageUrl ? [app.imageUrl] : []).filter(Boolean)
+  const authReq = ['script.google.com', 'docs.google.com', 'sheets.google.com', 'forms.google.com', 'accounts.google.com'].some(p => app.url.includes(p))
+  const thum = (w: number, h: number) => `https://image.thum.io/get/width/${w}/crop/${h}/${app.url}`
+  const stored = (app.imageUrls?.length ? app.imageUrls : app.imageUrl ? [app.imageUrl] : []).filter(Boolean)
+  // 저장된 이미지가 부족하면 thum.io로 채움 (인증 필요 앱 제외)
+  const images: string[] = authReq ? stored : [
+    ...stored,
+    ...(stored.length < 2 ? [thum(1280, 800)] : []),
+    ...(stored.length < 3 ? [thum(390, 844)] : []),
+  ].slice(0, 3)
   const descSections = parseDescription(app.description)
 
   return (
