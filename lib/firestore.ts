@@ -38,8 +38,10 @@ export async function fetchApp(id: string): Promise<AppItem | null> {
 }
 
 export async function createApp(data: Pick<AppItem, 'name' | 'url' | 'description' | 'imageUrl' | 'imageUrls' | 'tags'>) {
+  // Firestore rejects undefined values — strip them before writing
+  const clean = Object.fromEntries(Object.entries(data).filter(([, v]) => v !== undefined))
   return addDoc(collection(db, 'apps'), {
-    ...data,
+    ...clean,
     averageRating: 0,
     reviewCount: 0,
     createdAt: serverTimestamp(),
