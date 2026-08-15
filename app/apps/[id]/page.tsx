@@ -109,10 +109,11 @@ export default function AppDetailPage() {
   const ogStored = stored.find(s => !s.includes('image.thum.io') && !s.includes('microlink.io'))
   // 히어로 1장 + 가로 한 줄 3장(높이 통일)
   const hero = { src: mshot(app.url, 1280, 800), minWidth: 1280 }
-  const row: { src: string; minWidth?: number; label: string }[] = [
-    { src: mshot(app.url, 1280, 800), minWidth: 1280, label: '데스크탑' },
-    ogStored ? { src: ogStored, label: '태블릿' } : { src: mshot(app.url, 768, 1024), minWidth: 768, label: '태블릿' },
-    { src: mshot(app.url, 390, 844), minWidth: 390, label: '모바일' },
+  const row: { src: string; minWidth?: number; label: string; fit: 'cover' | 'contain' }[] = [
+    { src: mshot(app.url, 1280, 800), minWidth: 1280, label: '데스크탑', fit: 'cover' },
+    ogStored ? { src: ogStored, label: '태블릿', fit: 'cover' } : { src: mshot(app.url, 768, 1024), minWidth: 768, label: '태블릿', fit: 'cover' },
+    // 모바일: 세로 화면 전체가 보이도록 contain (잘라내면 가독성이 없음)
+    { src: mshot(app.url, 390, 844), minWidth: 390, label: '모바일', fit: 'contain' },
   ]
   const descSections = parseDescription(app.description)
 
@@ -165,18 +166,18 @@ export default function AppDetailPage() {
               style={{ width: '100%', height: 'auto', display: 'block' }} />
           </div>
 
-          {/* 가로 한 줄 3장: 높이 통일, 모바일은 위쪽만 잘라서 표시 */}
-          <div className="grid grid-cols-3 gap-4">
+          {/* 가로 한 줄 3장: 높이 통일 (좁은 화면에서는 세로로 쌓임) */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {row.map((img, idx) => (
               <div key={idx} className="rounded-2xl overflow-hidden"
                 style={{ border: '1px solid rgba(255,255,255,0.08)', background: '#0a0a12' }}>
                 <div className="px-3 py-1.5 text-xs font-medium" style={{ color: 'rgba(255,255,255,0.4)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
                   {img.label}
                 </div>
-                <div style={{ height: 220, overflow: 'hidden' }}>
+                <div style={{ height: 340, overflow: 'hidden' }}>
                   <SmartShot src={img.src} minWidth={img.minWidth}
                     alt={`${app.name} - ${img.label}`}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top', display: 'block' }} />
+                    style={{ width: '100%', height: '100%', objectFit: img.fit, objectPosition: 'top', display: 'block' }} />
                 </div>
               </div>
             ))}
