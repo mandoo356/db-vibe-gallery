@@ -230,8 +230,8 @@ export default function AppDetailPage() {
                       placeholder="의견을 남겨주세요..."
                       value={text}
                       onChange={e => setText(e.target.value)}
-                      className="w-full rounded-lg px-3 py-2 text-sm outline-none resize-y"
-                      style={{ ...inputStyle, placeholder: 'rgba(255,255,255,0.2)' }}
+                      className="w-full rounded-lg px-3 py-2 text-sm outline-none resize-y placeholder:text-white/20"
+                      style={inputStyle}
                     />
                   </div>
                   {submitError && (
