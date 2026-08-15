@@ -25,9 +25,9 @@ function AppCard({ app }: { app: AppItem }) {
     <article className="group relative rounded-xl flex flex-col h-full transition-all duration-300 hover:-translate-y-1 overflow-hidden"
       style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', backdropFilter: 'blur(12px)' }}>
       {/* thumbnail */}
-      <div className="relative h-36 overflow-hidden flex-shrink-0 rounded-t-xl" style={{ background: 'rgba(168,85,247,0.1)' }}>
+      <div className="relative h-36 overflow-hidden flex-shrink-0 rounded-t-xl flex items-center justify-center" style={{ background: '#0a0a12' }}>
         {app.imageUrl ? (
-          <img src={app.imageUrl} alt={app.name} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
+          <img src={app.imageUrl} alt={app.name} className="w-full h-full object-contain opacity-80 group-hover:opacity-100 transition-opacity" />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
             <span className="text-5xl font-black" style={{ color: 'rgba(168,85,247,0.5)' }}>

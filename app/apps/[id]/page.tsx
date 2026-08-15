@@ -51,8 +51,6 @@ export default function AppDetailPage() {
   const [submitError, setSubmitError] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
-  const [activeImg, setActiveImg] = useState(0)
-
   useEffect(() => {
     Promise.all([fetchApp(id), fetchReviews(id)])
       .then(([a, r]) => { setApp(a); setReviews(r); setLoading(false) })
@@ -151,33 +149,33 @@ export default function AppDetailPage() {
           </div>
         </section>
 
-        {/* Screenshot Gallery */}
+        {/* Screenshot Gallery — 전체 이미지 표시 */}
         {images.length > 0 && (
-          <section className="mb-10">
-            <div className="rounded-2xl overflow-hidden mb-3" style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
+          <section className="mb-10 space-y-4">
+            {/* 1번 이미지: 전체 너비, 잘림 없이 */}
+            <div className="rounded-2xl overflow-hidden flex items-center justify-center"
+              style={{ border: '1px solid rgba(255,255,255,0.08)', background: '#0a0a12' }}>
               <img
-                src={images[activeImg]}
-                alt={`${app.name} 미리보기 - ${VIEWPORT_LABELS[activeImg] ?? ''}`}
-                className="w-full object-cover object-top"
-                style={{ maxHeight: '480px', background: '#0a0a12' }}
+                src={images[0]}
+                alt={`${app.name} - ${VIEWPORT_LABELS[0]}`}
+                style={{ width: '100%', height: 'auto', display: 'block' }}
               />
             </div>
+
+            {/* 2번·3번 이미지: 나란히 */}
             {images.length > 1 && (
-              <div className="flex gap-3">
-                {images.map((img, idx) => (
-                  <button key={idx} onClick={() => setActiveImg(idx)}
-                    className="relative flex-1 rounded-xl overflow-hidden transition-all"
-                    style={{
-                      border: activeImg === idx ? '2px solid #a855f7' : '2px solid rgba(255,255,255,0.07)',
-                      opacity: activeImg === idx ? 1 : 0.5,
-                    }}>
-                    <img src={img} alt={VIEWPORT_LABELS[idx] ?? `이미지 ${idx + 1}`}
-                      className="w-full object-cover object-top" style={{ height: '80px' }} />
-                    <div className="absolute bottom-0 left-0 right-0 px-2 py-1 text-center text-xs font-medium"
-                      style={{ background: 'rgba(0,0,0,0.75)', color: activeImg === idx ? '#c084fc' : 'rgba(255,255,255,0.5)' }}>
-                      {VIEWPORT_LABELS[idx] ?? `이미지 ${idx + 1}`}
+              <div className="grid grid-cols-2 gap-4">
+                {images.slice(1, 3).map((img, idx) => (
+                  <div key={idx} className="rounded-2xl overflow-hidden flex items-center justify-center"
+                    style={{ border: '1px solid rgba(255,255,255,0.08)', background: '#0a0a12' }}>
+                    <div className="w-full">
+                      <div className="px-3 py-1.5 text-xs font-medium" style={{ color: 'rgba(255,255,255,0.4)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                        {VIEWPORT_LABELS[idx + 1] ?? `이미지 ${idx + 2}`}
+                      </div>
+                      <img src={img} alt={`${app.name} - ${VIEWPORT_LABELS[idx + 1] ?? ''}`}
+                        style={{ width: '100%', height: 'auto', display: 'block' }} />
                     </div>
-                  </button>
+                  </div>
                 ))}
               </div>
             )}
