@@ -40,7 +40,6 @@ function parseDescription(desc: string) {
 
 const glass = { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', backdropFilter: 'blur(12px)' }
 const inputStyle = { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#f1f5f9' }
-const VIEWPORT_LABELS = ['데스크탑', '태블릿', '모바일']
 
 export default function AppDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -108,11 +107,12 @@ export default function AppDetailPage() {
   const stored = (app.imageUrls?.length ? app.imageUrls : app.imageUrl ? [app.imageUrl] : []).filter(Boolean)
   // 캡처 서비스 URL(thum.io·microlink 흰 화면 이력)은 제외하고 진짜 og 이미지만 사용
   const ogStored = stored.find(s => !s.includes('image.thum.io') && !s.includes('microlink.io'))
-  // 항상 3장: 1) 데스크탑 히어로 2) og 이미지 또는 태블릿 3) 모바일 — mshots 실시간 캡처
-  const images: { src: string; minWidth?: number }[] = [
-    { src: mshot(app.url, 1280, 800), minWidth: 1280 },
-    ogStored ? { src: ogStored } : { src: mshot(app.url, 768, 1024), minWidth: 768 },
-    { src: mshot(app.url, 390, 844), minWidth: 390 },
+  // 히어로 1장 + 가로 한 줄 3장(높이 통일)
+  const hero = { src: mshot(app.url, 1280, 800), minWidth: 1280 }
+  const row: { src: string; minWidth?: number; label: string }[] = [
+    { src: mshot(app.url, 1280, 800), minWidth: 1280, label: '데스크탑' },
+    ogStored ? { src: ogStored, label: '태블릿' } : { src: mshot(app.url, 768, 1024), minWidth: 768, label: '태블릿' },
+    { src: mshot(app.url, 390, 844), minWidth: 390, label: '모바일' },
   ]
   const descSections = parseDescription(app.description)
 
@@ -155,27 +155,29 @@ export default function AppDetailPage() {
           </div>
         </section>
 
-        {/* Screenshot Gallery — 항상 3장 */}
+        {/* Screenshot Gallery — 히어로 1장 + 가로 한 줄 3장 */}
         <section className="mb-10 space-y-4">
-          {/* 1번 이미지: 데스크탑 히어로, 전체 너비 */}
+          {/* 히어로: 전체 너비 */}
           <div className="rounded-2xl overflow-hidden"
             style={{ border: '1px solid rgba(255,255,255,0.08)', background: '#0a0a12' }}>
-            <SmartShot src={images[0].src} minWidth={images[0].minWidth}
-              alt={`${app.name} - ${VIEWPORT_LABELS[0]}`}
+            <SmartShot src={hero.src} minWidth={hero.minWidth}
+              alt={`${app.name} - 히어로`}
               style={{ width: '100%', height: 'auto', display: 'block' }} />
           </div>
 
-          {/* 2번·3번 이미지: 나란히 */}
-          <div className="grid grid-cols-2 gap-4">
-            {images.slice(1, 3).map((img, idx) => (
+          {/* 가로 한 줄 3장: 높이 통일, 모바일은 위쪽만 잘라서 표시 */}
+          <div className="grid grid-cols-3 gap-4">
+            {row.map((img, idx) => (
               <div key={idx} className="rounded-2xl overflow-hidden"
                 style={{ border: '1px solid rgba(255,255,255,0.08)', background: '#0a0a12' }}>
                 <div className="px-3 py-1.5 text-xs font-medium" style={{ color: 'rgba(255,255,255,0.4)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                  {VIEWPORT_LABELS[idx + 1]}
+                  {img.label}
                 </div>
-                <SmartShot src={img.src} minWidth={img.minWidth}
-                  alt={`${app.name} - ${VIEWPORT_LABELS[idx + 1]}`}
-                  style={{ width: '100%', height: 'auto', display: 'block' }} />
+                <div style={{ height: 220, overflow: 'hidden' }}>
+                  <SmartShot src={img.src} minWidth={img.minWidth}
+                    alt={`${app.name} - ${img.label}`}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top', display: 'block' }} />
+                </div>
               </div>
             ))}
           </div>
