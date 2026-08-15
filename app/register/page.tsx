@@ -11,7 +11,7 @@ const inputStyle = 'w-full rounded-lg px-4 py-2.5 text-sm outline-none transitio
 
 export default function RegisterPage() {
   const router = useRouter()
-  const [form, setForm] = useState({ name: '', url: '', imageUrl: '', tags: '', description: '', password: '' })
+  const [form, setForm] = useState({ name: '', url: '', imageUrl: '', imageUrls: [] as string[], tags: '', description: '', password: '' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [analyzing, setAnalyzing] = useState(false)
@@ -28,7 +28,7 @@ export default function RegisterPage() {
     try {
       const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url }) })
       const data = await res.json()
-      setForm(f => ({ ...f, imageUrl: data.screenshot || f.imageUrl, description: data.description || f.description, name: f.name || data.title || f.name }))
+      setForm(f => ({ ...f, imageUrl: data.screenshot || f.imageUrl, imageUrls: data.screenshots?.length ? data.screenshots : f.imageUrls, description: data.description || f.description, name: f.name || data.title || f.name }))
     } catch {
       setError('앱 분석 중 오류가 발생했습니다. 직접 입력해주세요.')
     } finally { setAnalyzing(false) }
@@ -41,7 +41,7 @@ export default function RegisterPage() {
     if (!form.name || !form.url || !form.description) { setError('앱 이름, URL, 설명은 필수입니다.'); return }
     setLoading(true)
     try {
-      await createApp({ name: form.name, url: form.url, description: form.description, imageUrl: form.imageUrl || undefined, tags: form.tags ? form.tags.split(',').map(t => t.trim()).filter(Boolean) : [] })
+      await createApp({ name: form.name, url: form.url, description: form.description, imageUrl: form.imageUrl || undefined, imageUrls: form.imageUrls.length ? form.imageUrls : undefined, tags: form.tags ? form.tags.split(',').map(t => t.trim()).filter(Boolean) : [] })
       router.push('/')
     } catch {
       setError('등록 중 오류가 발생했습니다.')

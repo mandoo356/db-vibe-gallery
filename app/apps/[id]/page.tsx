@@ -15,22 +15,33 @@ function Stars({ value, onChange }: { value: number; onChange?: (v: number) => v
       {[1, 2, 3, 4, 5].map(i => {
         const filled = i <= (hover || value)
         return (
-          <span
-            key={i}
-            onClick={() => onChange?.(i)}
+          <span key={i} onClick={() => onChange?.(i)}
             onMouseEnter={() => interactive && setHover(i)}
             onMouseLeave={() => interactive && setHover(0)}
-            style={{ cursor: interactive ? 'pointer' : 'default', color: filled ? '#f59e0b' : 'rgba(255,255,255,0.15)' }}
-            className={`material-symbols-outlined text-2xl transition-colors ${filled ? 'icon-fill' : ''}`}
-          >star</span>
+            style={{ cursor: interactive ? 'pointer' : 'default', color: filled ? '#f59e0b' : 'rgba(255,255,255,0.15)', transition: 'color 0.15s' }}
+            className={`material-symbols-outlined text-2xl ${filled ? 'icon-fill' : ''}`}>
+            star
+          </span>
         )
       })}
     </div>
   )
 }
 
+function parseDescription(desc: string) {
+  // Parse sections like [개요], [주요 기능], [활용 대상]
+  const sections: { title: string; body: string }[] = []
+  const parts = desc.split(/\[([^\]]+)\]/)
+  for (let i = 1; i < parts.length; i += 2) {
+    sections.push({ title: parts[i].trim(), body: parts[i + 1]?.trim() ?? '' })
+  }
+  return sections.length > 0 ? sections : [{ title: '', body: desc }]
+}
+
 const glass = { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', backdropFilter: 'blur(12px)' }
 const inputStyle = { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#f1f5f9' }
+
+const VIEWPORT_LABELS = ['데스크탑', '태블릿', '모바일']
 
 export default function AppDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -41,6 +52,7 @@ export default function AppDetailPage() {
   const [submitting, setSubmitting] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
+  const [activeImg, setActiveImg] = useState(0)
 
   useEffect(() => {
     Promise.all([fetchApp(id), fetchReviews(id)])
@@ -88,6 +100,10 @@ export default function AppDetailPage() {
     </Layout>
   )
 
+  // Collect images: prefer imageUrls array, fall back to imageUrl
+  const images: string[] = (app.imageUrls?.length ? app.imageUrls : app.imageUrl ? [app.imageUrl] : []).filter(Boolean)
+  const descSections = parseDescription(app.description)
+
   return (
     <Layout>
       {/* App Header */}
@@ -95,8 +111,8 @@ export default function AppDetailPage() {
         <div className="flex flex-col md:flex-row gap-6 items-start">
           <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 flex items-center justify-center"
             style={{ background: 'rgba(168,85,247,0.1)', border: '1px solid rgba(168,85,247,0.2)' }}>
-            {app.imageUrl
-              ? <img src={app.imageUrl} alt={app.name} className="w-full h-full object-cover" />
+            {images[0]
+              ? <img src={images[0]} alt={app.name} className="w-full h-full object-cover object-top" />
               : <span className="font-black text-4xl" style={{ color: '#a855f7' }}>{app.name.charAt(0).toUpperCase()}</span>
             }
           </div>
@@ -110,7 +126,6 @@ export default function AppDetailPage() {
                 </span>
               ))}
             </div>
-            <p className="text-sm mb-4 max-w-2xl" style={{ color: 'rgba(255,255,255,0.5)' }}>{app.description}</p>
             <div className="flex items-center gap-3 mb-5">
               <Stars value={Math.round(app.averageRating)} />
               <span className="text-sm" style={{ color: 'rgba(255,255,255,0.35)' }}>
@@ -127,12 +142,70 @@ export default function AppDetailPage() {
         </div>
       </section>
 
-      {/* Preview */}
-      {app.imageUrl && (
-        <section className="mb-10 rounded-xl overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.07)' }}>
-          <img src={app.imageUrl} alt={`${app.name} 미리보기`} className="w-full object-cover" style={{ maxHeight: '400px' }} />
+      {/* Screenshot Gallery - 3 images */}
+      {images.length > 0 && (
+        <section className="mb-10">
+          {/* Main large image */}
+          <div className="rounded-2xl overflow-hidden mb-3" style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
+            <img
+              src={images[activeImg]}
+              alt={`${app.name} 미리보기 - ${VIEWPORT_LABELS[activeImg] ?? ''}`}
+              className="w-full object-cover object-top transition-all duration-300"
+              style={{ maxHeight: '480px', background: '#0a0a12' }}
+            />
+          </div>
+
+          {/* Thumbnail row */}
+          {images.length > 1 && (
+            <div className="flex gap-3">
+              {images.map((img, idx) => (
+                <button key={idx} onClick={() => setActiveImg(idx)}
+                  className="relative flex-1 rounded-xl overflow-hidden transition-all"
+                  style={{
+                    border: activeImg === idx
+                      ? '2px solid #a855f7'
+                      : '2px solid rgba(255,255,255,0.07)',
+                    opacity: activeImg === idx ? 1 : 0.5,
+                  }}>
+                  <img src={img} alt={VIEWPORT_LABELS[idx] ?? `이미지 ${idx + 1}`}
+                    className="w-full object-cover object-top"
+                    style={{ height: '80px' }} />
+                  <div className="absolute bottom-0 left-0 right-0 px-2 py-1 text-center text-xs font-medium"
+                    style={{ background: 'rgba(0,0,0,0.75)', color: activeImg === idx ? '#c084fc' : 'rgba(255,255,255,0.5)' }}>
+                    {VIEWPORT_LABELS[idx] ?? `이미지 ${idx + 1}`}
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
         </section>
       )}
+
+      {/* Description */}
+      <section className="mb-10 p-8 rounded-2xl" style={glass}>
+        <h2 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
+          <span className="material-symbols-outlined text-base" style={{ color: '#a855f7' }}>description</span>
+          앱 소개
+        </h2>
+        {descSections[0].title ? (
+          <div className="space-y-6">
+            {descSections.map((sec, i) => (
+              <div key={i}>
+                <h3 className="text-sm font-semibold mb-2" style={{ color: '#c084fc' }}>{sec.title}</h3>
+                <div className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.65)' }}>
+                  {sec.body.split('\n').map((line, j) => (
+                    <p key={j} className={line.startsWith('•') ? 'pl-2 mb-1' : 'mb-1'}>{line}</p>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm leading-relaxed whitespace-pre-line" style={{ color: 'rgba(255,255,255,0.65)' }}>
+            {app.description}
+          </p>
+        )}
+      </section>
 
       {/* Reviews */}
       <section>
@@ -150,14 +223,9 @@ export default function AppDetailPage() {
                 </div>
                 <div className="mb-4">
                   <label className="block text-xs font-medium mb-2" style={{ color: 'rgba(255,255,255,0.5)' }}>리뷰 내용</label>
-                  <textarea
-                    rows={4}
-                    placeholder="의견을 남겨주세요..."
-                    value={text}
-                    onChange={e => setText(e.target.value)}
+                  <textarea rows={4} placeholder="의견을 남겨주세요..." value={text} onChange={e => setText(e.target.value)}
                     className="w-full rounded-lg px-3 py-2 text-sm outline-none resize-y placeholder:text-white/20"
-                    style={inputStyle}
-                  />
+                    style={inputStyle} />
                 </div>
                 <button type="submit" disabled={!rating || submitting}
                   className="w-full py-2.5 rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-30"
