@@ -4,7 +4,6 @@ import { usePathname } from 'next/navigation'
 
 const links = [
   { href: '/', label: '갤러리' },
-  { href: '/register', label: '앱 등록' },
   { href: '/admin', label: '관리자' },
 ]
 

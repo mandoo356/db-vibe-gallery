@@ -1,13 +1,28 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { NextRequest, NextResponse } from 'next/server'
 
+// 로그인/인증 화면이 나오는 URL 패턴 — 캡처해도 흰 화면만 나옴
+const AUTH_REQUIRED_PATTERNS = [
+  'script.google.com',
+  'docs.google.com',
+  'sheets.google.com',
+  'forms.google.com',
+  'accounts.google.com',
+  'login.',
+  '/login',
+  '/signin',
+]
+
+function requiresAuth(url: string): boolean {
+  return AUTH_REQUIRED_PATTERNS.some(p => url.includes(p))
+}
+
 async function fetchScreenshot(url: string, extraParams: Record<string, string> = {}): Promise<string> {
   try {
     const qs = new URLSearchParams({
       url,
       screenshot: 'true',
       meta: 'false',
-      // 3초 대기 → SPA가 JS 렌더링 완료 후 캡처
       'screenshot.delay': '3000',
       ...extraParams,
     })
@@ -23,27 +38,32 @@ export async function POST(req: NextRequest) {
   const { url } = await req.json()
   if (!url) return NextResponse.json({ error: 'URL required' }, { status: 400 })
 
-  // 1. 메타데이터(og:image 포함) + 2가지 해상도 스크린샷 병렬 요청
-  const [metaRes, desktopShot, mobileShot] = await Promise.all([
-    fetch(`https://api.microlink.io/?url=${encodeURIComponent(url)}&meta=true`, { next: { revalidate: 0 } })
-      .then(r => r.json()).catch(() => ({})),
-    // 데스크탑: 히어로 섹션이 잘 나오도록 1280x800 + 3초 딜레이
-    fetchScreenshot(url, { 'viewport.width': '1280', 'viewport.height': '800' }),
-    // 모바일
-    fetchScreenshot(url, { 'viewport.width': '390', 'viewport.height': '844' }),
-  ])
+  // 1. 메타데이터 (og:image 포함)
+  const metaRes = await fetch(
+    `https://api.microlink.io/?url=${encodeURIComponent(url)}&meta=true`,
+    { next: { revalidate: 0 } }
+  ).then(r => r.json()).catch(() => ({}))
 
   const pageTitle = metaRes?.data?.title ?? ''
   const pageMeta = metaRes?.data?.description ?? ''
-
-  // og:image를 1번 사진으로 (개발자가 직접 만든 고품질 프리뷰)
+  // og:image — 개발자가 직접 만든 고품질 프리뷰 이미지
   const ogImage: string = metaRes?.data?.image?.url ?? ''
 
-  // 3장: [og:image, 데스크탑 캡처, 모바일 캡처]
+  // 2. 스크린샷: 인증 필요 URL은 건너뜀 (흰 화면만 나오므로)
+  let desktopShot = ''
+  let mobileShot = ''
+  if (!requiresAuth(url)) {
+    ;[desktopShot, mobileShot] = await Promise.all([
+      fetchScreenshot(url, { 'viewport.width': '1280', 'viewport.height': '800' }),
+      fetchScreenshot(url, { 'viewport.width': '390', 'viewport.height': '844' }),
+    ])
+  }
+
+  // 3장 조합: og:image → 데스크탑 캡처 → 모바일 캡처
   const screenshots = [ogImage, desktopShot, mobileShot].filter(Boolean)
   const screenshot = screenshots[0] ?? ''
 
-  // 2. Claude로 구조화된 한국어 설명 생성
+  // 3. Claude 한국어 설명 생성
   if (!process.env.ANTHROPIC_API_KEY) {
     return NextResponse.json({ screenshot, screenshots, description: pageMeta, title: pageTitle })
   }
