@@ -1,10 +1,9 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { NextRequest, NextResponse } from 'next/server'
 
-// thum.io: 실제 Chrome 헤드리스로 SPA 렌더링 후 캡처, 무료·API 키 불필요
-// wait/8 = JS 렌더링 완료까지 최대 8초 대기 (Apps Script·Firebase 앱 검증됨)
-function thumioUrl(url: string, width: number, crop: number): string {
-  return `https://image.thum.io/get/width/${width}/crop/${crop}/wait/8/${url}`
+// WordPress mshots: 실제 브라우저 렌더링, 무료·키 불필요 (Apps Script·Firebase SPA 검증됨)
+function mshotUrl(url: string, w: number, h: number): string {
+  return `https://s0.wp.com/mshots/v1/${encodeURIComponent(url)}?w=${w}&h=${h}`
 }
 
 export async function POST(req: NextRequest) {
@@ -21,12 +20,11 @@ export async function POST(req: NextRequest) {
   const pageMeta = metaRes?.data?.description ?? ''
   const ogImage: string = metaRes?.data?.image?.url ?? ''
 
-  // 2. thum.io로 스크린샷 URL 구성 (실제 브라우저 렌더링이라 Apps Script도 캡처됨)
-  const screenshots = [
-    thumioUrl(url, 1280, 800),
-    ogImage,
-    thumioUrl(url, 390, 844),
-  ].filter(Boolean)
+  // 2. mshots로 스크린샷 URL 구성 + 캡처 생성 트리거 (첫 요청이 생성을 시작함)
+  const desktopShot = mshotUrl(url, 1280, 800)
+  const mobileShot = mshotUrl(url, 390, 844)
+  Promise.all([fetch(desktopShot), fetch(mobileShot)]).catch(() => {})
+  const screenshots = [desktopShot, ogImage, mobileShot].filter(Boolean)
   const screenshot = screenshots[0] ?? ''
 
   // 3. Claude 한국어 설명 생성

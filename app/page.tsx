@@ -4,6 +4,7 @@ import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import AnimatedBg from '@/components/AnimatedBg'
+import SmartShot, { mshot } from '@/components/SmartShot'
 import { fetchApps, type AppItem } from '@/lib/firestore'
 
 function Stars({ value }: { value: number }) {
@@ -21,15 +22,20 @@ function Stars({ value }: { value: number }) {
 }
 
 function AppCard({ app }: { app: AppItem }) {
-  // 저장된 이미지가 없으면 thum.io 실시간 캡처로 대체
-  const thumb = app.imageUrls?.[0] ?? app.imageUrl ?? `https://image.thum.io/get/width/640/crop/400/wait/8/${app.url}`
+  // 캡처 서비스 URL(흰 화면 이력)은 제외한 진짜 이미지 → 없으면 mshots 실시간 캡처
+  const ogStored = [...(app.imageUrls ?? []), app.imageUrl ?? '']
+    .filter(Boolean)
+    .find(s => !s.includes('image.thum.io') && !s.includes('microlink.io'))
   return (
     <article className="group relative rounded-xl flex flex-col h-full transition-all duration-300 hover:-translate-y-1 overflow-hidden"
       style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', backdropFilter: 'blur(12px)' }}>
       {/* thumbnail */}
       <div className="relative h-36 overflow-hidden flex-shrink-0 rounded-t-xl flex items-center justify-center" style={{ background: '#0a0a12' }}>
-        <img src={thumb} alt={app.name} className="w-full h-full object-cover object-top opacity-80 group-hover:opacity-100 transition-opacity"
-          onError={e => { e.currentTarget.style.display = 'none' }} />
+        <SmartShot
+          src={ogStored ?? mshot(app.url, 640, 400)}
+          minWidth={ogStored ? undefined : 640}
+          alt={app.name}
+          className="w-full h-full object-cover object-top opacity-80 group-hover:opacity-100 transition-opacity" />
         {/* rating badge */}
         <div className="absolute top-2 right-2 flex items-center gap-1 px-2 py-1 rounded-full text-xs font-bold"
           style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)', color: '#f59e0b' }}>
@@ -60,8 +66,8 @@ function AppCard({ app }: { app: AppItem }) {
 
         <div className="flex gap-2 mt-auto">
           <Link href={`/apps/${app.id}`}
-            className="flex-1 text-center py-2 rounded-lg text-xs font-medium transition-all"
-            style={{ background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.08)' }}>
+            className="flex-1 text-center py-2 rounded-lg text-xs font-semibold transition-all hover:opacity-90"
+            style={{ background: 'rgba(255,255,255,0.9)', color: '#111' }}>
             상세 보기
           </Link>
           <a href={app.url} target="_blank" rel="noopener noreferrer"

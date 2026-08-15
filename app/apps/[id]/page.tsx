@@ -5,6 +5,7 @@ import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import AnimatedBg from '@/components/AnimatedBg'
+import SmartShot, { mshot } from '@/components/SmartShot'
 import { fetchApp, fetchReviews, createReview, type AppItem, type Review } from '@/lib/firestore'
 
 function Stars({ value, onChange }: { value: number; onChange?: (v: number) => void }) {
@@ -104,11 +105,15 @@ export default function AppDetailPage() {
     </div>
   )
 
-  const thum = (w: number, h: number) => `https://image.thum.io/get/width/${w}/crop/${h}/wait/8/${app.url}`
   const stored = (app.imageUrls?.length ? app.imageUrls : app.imageUrl ? [app.imageUrl] : []).filter(Boolean)
-  // 항상 3장: 1) 데스크탑 히어로 실시간 캡처 2) 저장 이미지(og) 또는 태블릿 캡처 3) 모바일 캡처
-  const ogStored = stored.find(s => !s.includes('image.thum.io'))
-  const images: string[] = [thum(1280, 800), ogStored ?? thum(768, 1024), thum(390, 844)]
+  // 캡처 서비스 URL(thum.io·microlink 흰 화면 이력)은 제외하고 진짜 og 이미지만 사용
+  const ogStored = stored.find(s => !s.includes('image.thum.io') && !s.includes('microlink.io'))
+  // 항상 3장: 1) 데스크탑 히어로 2) og 이미지 또는 태블릿 3) 모바일 — mshots 실시간 캡처
+  const images: { src: string; minWidth?: number }[] = [
+    { src: mshot(app.url, 1280, 800), minWidth: 1280 },
+    ogStored ? { src: ogStored } : { src: mshot(app.url, 768, 1024), minWidth: 768 },
+    { src: mshot(app.url, 390, 844), minWidth: 390 },
+  ]
   const descSections = parseDescription(app.description)
 
   return (
@@ -122,10 +127,7 @@ export default function AppDetailPage() {
           <div className="flex flex-col md:flex-row gap-6 items-start">
             <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 flex items-center justify-center"
               style={{ background: 'rgba(168,85,247,0.1)', border: '1px solid rgba(168,85,247,0.2)' }}>
-              {images[0]
-                ? <img src={images[0]} alt={app.name} className="w-full h-full object-cover object-top" />
-                : <span className="font-black text-4xl" style={{ color: '#a855f7' }}>{app.name.charAt(0).toUpperCase()}</span>
-              }
+              <span className="font-black text-4xl" style={{ color: '#a855f7' }}>{app.name.charAt(0).toUpperCase()}</span>
             </div>
             <div className="flex-grow">
               <div className="flex flex-wrap items-center gap-3 mb-2">
@@ -153,38 +155,31 @@ export default function AppDetailPage() {
           </div>
         </section>
 
-        {/* Screenshot Gallery — 전체 이미지 표시 */}
-        {images.length > 0 && (
-          <section className="mb-10 space-y-4">
-            {/* 1번 이미지: 전체 너비, 잘림 없이 */}
-            <div className="rounded-2xl overflow-hidden flex items-center justify-center"
-              style={{ border: '1px solid rgba(255,255,255,0.08)', background: '#0a0a12' }}>
-              <img
-                src={images[0]}
-                alt={`${app.name} - ${VIEWPORT_LABELS[0]}`}
-                style={{ width: '100%', height: 'auto', display: 'block' }}
-              />
-            </div>
+        {/* Screenshot Gallery — 항상 3장 */}
+        <section className="mb-10 space-y-4">
+          {/* 1번 이미지: 데스크탑 히어로, 전체 너비 */}
+          <div className="rounded-2xl overflow-hidden"
+            style={{ border: '1px solid rgba(255,255,255,0.08)', background: '#0a0a12' }}>
+            <SmartShot src={images[0].src} minWidth={images[0].minWidth}
+              alt={`${app.name} - ${VIEWPORT_LABELS[0]}`}
+              style={{ width: '100%', height: 'auto', display: 'block' }} />
+          </div>
 
-            {/* 2번·3번 이미지: 나란히 */}
-            {images.length > 1 && (
-              <div className="grid grid-cols-2 gap-4">
-                {images.slice(1, 3).map((img, idx) => (
-                  <div key={idx} className="rounded-2xl overflow-hidden flex items-center justify-center"
-                    style={{ border: '1px solid rgba(255,255,255,0.08)', background: '#0a0a12' }}>
-                    <div className="w-full">
-                      <div className="px-3 py-1.5 text-xs font-medium" style={{ color: 'rgba(255,255,255,0.4)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                        {VIEWPORT_LABELS[idx + 1] ?? `이미지 ${idx + 2}`}
-                      </div>
-                      <img src={img} alt={`${app.name} - ${VIEWPORT_LABELS[idx + 1] ?? ''}`}
-                        style={{ width: '100%', height: 'auto', display: 'block' }} />
-                    </div>
-                  </div>
-                ))}
+          {/* 2번·3번 이미지: 나란히 */}
+          <div className="grid grid-cols-2 gap-4">
+            {images.slice(1, 3).map((img, idx) => (
+              <div key={idx} className="rounded-2xl overflow-hidden"
+                style={{ border: '1px solid rgba(255,255,255,0.08)', background: '#0a0a12' }}>
+                <div className="px-3 py-1.5 text-xs font-medium" style={{ color: 'rgba(255,255,255,0.4)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                  {VIEWPORT_LABELS[idx + 1]}
+                </div>
+                <SmartShot src={img.src} minWidth={img.minWidth}
+                  alt={`${app.name} - ${VIEWPORT_LABELS[idx + 1]}`}
+                  style={{ width: '100%', height: 'auto', display: 'block' }} />
               </div>
-            )}
-          </section>
-        )}
+            ))}
+          </div>
+        </section>
 
         {/* Description */}
         <section className="mb-10 p-8 rounded-2xl" style={glass}>
