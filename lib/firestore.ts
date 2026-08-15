@@ -56,6 +56,11 @@ export async function removeApp(id: string) {
   await deleteDoc(doc(db, 'apps', id))
 }
 
+export async function fetchAllReviews(): Promise<Review[]> {
+  const snap = await getDocs(collection(db, 'reviews'))
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as Review))
+}
+
 export async function fetchReviews(appId: string): Promise<Review[]> {
   // orderBy + where on different fields requires a composite index — sort client-side instead
   const q = query(collection(db, 'reviews'), where('appId', '==', appId))

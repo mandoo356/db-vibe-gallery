@@ -5,7 +5,7 @@ import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import AnimatedBg from '@/components/AnimatedBg'
 import SmartShot, { mshot } from '@/components/SmartShot'
-import { fetchApps, type AppItem } from '@/lib/firestore'
+import { fetchApps, fetchAllReviews, type AppItem, type Review } from '@/lib/firestore'
 
 function Stars({ value }: { value: number }) {
   return (
@@ -21,7 +21,7 @@ function Stars({ value }: { value: number }) {
   )
 }
 
-function AppCard({ app }: { app: AppItem }) {
+function AppCard({ app, topReviews }: { app: AppItem; topReviews: Review[] }) {
   // 캡처 서비스 URL(흰 화면 이력)은 제외한 진짜 이미지 → 없으면 mshots 실시간 캡처
   const ogStored = [...(app.imageUrls ?? []), app.imageUrl ?? '']
     .filter(Boolean)
@@ -53,6 +53,20 @@ function AppCard({ app }: { app: AppItem }) {
           <span className="text-xs mt-1 block" style={{ color: 'rgba(255,255,255,0.3)' }}>{app.reviewCount}개 리뷰</span>
         </div>
 
+        {/* 평점 높은 리뷰 미리보기 */}
+        {topReviews.length > 0 && (
+          <div className="mb-3 space-y-1.5 rounded-lg p-2.5" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
+            {topReviews.map(r => (
+              <div key={r.id} className="flex items-start gap-1.5 text-xs">
+                <span className="flex items-center gap-0.5 flex-shrink-0 font-semibold" style={{ color: '#f59e0b' }}>
+                  <span className="material-symbols-outlined icon-fill" style={{ fontSize: 12 }}>star</span>{r.rating}
+                </span>
+                <span className="truncate" style={{ color: 'rgba(255,255,255,0.45)' }}>{r.text}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
         {app.tags && app.tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mb-3">
             {app.tags.slice(0, 3).map(tag => (
@@ -83,10 +97,22 @@ function AppCard({ app }: { app: AppItem }) {
 
 export default function GalleryPage() {
   const [apps, setApps] = useState<AppItem[]>([])
+  const [reviewsByApp, setReviewsByApp] = useState<Record<string, Review[]>>({})
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchApps().then(data => { setApps(data); setLoading(false) })
+    Promise.all([fetchApps(), fetchAllReviews()]).then(([data, reviews]) => {
+      // 앱별로 텍스트 있는 리뷰만 평점 높은 순 상위 3개
+      const grouped: Record<string, Review[]> = {}
+      for (const r of reviews) {
+        if (!r.text?.trim()) continue
+        ;(grouped[r.appId] ??= []).push(r)
+      }
+      for (const k in grouped) grouped[k] = grouped[k].sort((a, b) => b.rating - a.rating).slice(0, 3)
+      setApps(data)
+      setReviewsByApp(grouped)
+      setLoading(false)
+    })
   }, [])
 
   return (
@@ -129,7 +155,7 @@ export default function GalleryPage() {
           </div>
         ) : (
           <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-            {apps.map(app => <AppCard key={app.id} app={app} />)}
+            {apps.map(app => <AppCard key={app.id} app={app} topReviews={reviewsByApp[app.id] ?? []} />)}
           </section>
         )}
       </main>
