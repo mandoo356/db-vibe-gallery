@@ -1,21 +1,22 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { NextRequest, NextResponse } from 'next/server'
 
-// 로그인/인증 화면이 나오는 URL 패턴 — 캡처해도 흰 화면만 나옴
+// 로그인 화면만 나오는 URL 패턴
 const AUTH_REQUIRED_PATTERNS = [
   'script.google.com',
   'docs.google.com',
   'sheets.google.com',
   'forms.google.com',
   'accounts.google.com',
-  'login.',
-  '/login',
-  '/signin',
 ]
 
 function requiresAuth(url: string): boolean {
   return AUTH_REQUIRED_PATTERNS.some(p => url.includes(p))
 }
+
+// 캡처 후 파일 크기로 흰 화면 판별
+// 2560×1600 PNG가 50KB 미만이면 내용 없는 흰/빈 화면
+const MIN_SCREENSHOT_SIZE = 50_000
 
 async function fetchScreenshot(url: string, extraParams: Record<string, string> = {}): Promise<string> {
   try {
@@ -23,12 +24,20 @@ async function fetchScreenshot(url: string, extraParams: Record<string, string> 
       url,
       screenshot: 'true',
       meta: 'false',
-      'screenshot.delay': '3000',
+      'screenshot.delay': '4000',   // 4초 대기 (Firebase 앱 대응)
       ...extraParams,
     })
     const res = await fetch(`https://api.microlink.io/?${qs}`, { next: { revalidate: 0 } })
     const data = await res.json()
-    return data.status === 'success' ? (data.data?.screenshot?.url ?? '') : ''
+    if (data.status !== 'success') return ''
+
+    const shot = data.data?.screenshot
+    if (!shot?.url) return ''
+
+    // 파일 크기가 너무 작으면 흰 화면 → 버림
+    if ((shot.size ?? 0) < MIN_SCREENSHOT_SIZE) return ''
+
+    return shot.url
   } catch {
     return ''
   }
@@ -46,20 +55,19 @@ export async function POST(req: NextRequest) {
 
   const pageTitle = metaRes?.data?.title ?? ''
   const pageMeta = metaRes?.data?.description ?? ''
-  // og:image — 개발자가 직접 만든 고품질 프리뷰 이미지
   const ogImage: string = metaRes?.data?.image?.url ?? ''
 
-  // 2. 스크린샷: 인증 필요 URL은 건너뜀 (흰 화면만 나오므로)
+  // 2. 스크린샷 (인증 필요 URL은 건너뜀 / 흰 화면은 자동 필터)
   let desktopShot = ''
   let mobileShot = ''
   if (!requiresAuth(url)) {
     ;[desktopShot, mobileShot] = await Promise.all([
       fetchScreenshot(url, { 'viewport.width': '1280', 'viewport.height': '800' }),
-      fetchScreenshot(url, { 'viewport.width': '390', 'viewport.height': '844' }),
+      fetchScreenshot(url, { 'viewport.width': '390',  'viewport.height': '844' }),
     ])
   }
 
-  // 3장 조합: og:image → 데스크탑 캡처 → 모바일 캡처
+  // og:image → 데스크탑 캡처 → 모바일 캡처 순서로 조합
   const screenshots = [ogImage, desktopShot, mobileShot].filter(Boolean)
   const screenshot = screenshots[0] ?? ''
 
