@@ -1,21 +1,10 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { NextRequest, NextResponse } from 'next/server'
 
-const AUTH_REQUIRED_PATTERNS = [
-  'script.google.com',
-  'docs.google.com',
-  'sheets.google.com',
-  'forms.google.com',
-  'accounts.google.com',
-]
-
-function requiresAuth(url: string): boolean {
-  return AUTH_REQUIRED_PATTERNS.some(p => url.includes(p))
-}
-
 // thum.io: 실제 Chrome 헤드리스로 SPA 렌더링 후 캡처, 무료·API 키 불필요
+// wait/8 = JS 렌더링 완료까지 최대 8초 대기 (Apps Script·Firebase 앱 검증됨)
 function thumioUrl(url: string, width: number, crop: number): string {
-  return `https://image.thum.io/get/width/${width}/crop/${crop}/${url}`
+  return `https://image.thum.io/get/width/${width}/crop/${crop}/wait/8/${url}`
 }
 
 export async function POST(req: NextRequest) {
@@ -32,12 +21,11 @@ export async function POST(req: NextRequest) {
   const pageMeta = metaRes?.data?.description ?? ''
   const ogImage: string = metaRes?.data?.image?.url ?? ''
 
-  // 2. thum.io로 스크린샷 URL 구성 (인증 필요 URL은 건너뜀)
-  const authReq = requiresAuth(url)
+  // 2. thum.io로 스크린샷 URL 구성 (실제 브라우저 렌더링이라 Apps Script도 캡처됨)
   const screenshots = [
+    thumioUrl(url, 1280, 800),
     ogImage,
-    authReq ? '' : thumioUrl(url, 1280, 800),
-    authReq ? '' : thumioUrl(url, 390, 844),
+    thumioUrl(url, 390, 844),
   ].filter(Boolean)
   const screenshot = screenshots[0] ?? ''
 

@@ -21,20 +21,15 @@ function Stars({ value }: { value: number }) {
 }
 
 function AppCard({ app }: { app: AppItem }) {
+  // 저장된 이미지가 없으면 thum.io 실시간 캡처로 대체
+  const thumb = app.imageUrls?.[0] ?? app.imageUrl ?? `https://image.thum.io/get/width/640/crop/400/wait/8/${app.url}`
   return (
     <article className="group relative rounded-xl flex flex-col h-full transition-all duration-300 hover:-translate-y-1 overflow-hidden"
       style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', backdropFilter: 'blur(12px)' }}>
       {/* thumbnail */}
       <div className="relative h-36 overflow-hidden flex-shrink-0 rounded-t-xl flex items-center justify-center" style={{ background: '#0a0a12' }}>
-        {(app.imageUrls?.[0] ?? app.imageUrl) ? (
-          <img src={app.imageUrls?.[0] ?? app.imageUrl} alt={app.name} className="w-full h-full object-contain opacity-80 group-hover:opacity-100 transition-opacity" />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <span className="text-5xl font-black" style={{ color: 'rgba(168,85,247,0.5)' }}>
-              {app.name.charAt(0).toUpperCase()}
-            </span>
-          </div>
-        )}
+        <img src={thumb} alt={app.name} className="w-full h-full object-cover object-top opacity-80 group-hover:opacity-100 transition-opacity"
+          onError={e => { e.currentTarget.style.display = 'none' }} />
         {/* rating badge */}
         <div className="absolute top-2 right-2 flex items-center gap-1 px-2 py-1 rounded-full text-xs font-bold"
           style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)', color: '#f59e0b' }}>

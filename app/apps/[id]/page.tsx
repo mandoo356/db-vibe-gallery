@@ -104,15 +104,11 @@ export default function AppDetailPage() {
     </div>
   )
 
-  const authReq = ['script.google.com', 'docs.google.com', 'sheets.google.com', 'forms.google.com', 'accounts.google.com'].some(p => app.url.includes(p))
-  const thum = (w: number, h: number) => `https://image.thum.io/get/width/${w}/crop/${h}/${app.url}`
+  const thum = (w: number, h: number) => `https://image.thum.io/get/width/${w}/crop/${h}/wait/8/${app.url}`
   const stored = (app.imageUrls?.length ? app.imageUrls : app.imageUrl ? [app.imageUrl] : []).filter(Boolean)
-  // 저장된 이미지가 부족하면 thum.io로 채움 (인증 필요 앱 제외)
-  const images: string[] = authReq ? stored : [
-    ...stored,
-    ...(stored.length < 2 ? [thum(1280, 800)] : []),
-    ...(stored.length < 3 ? [thum(390, 844)] : []),
-  ].slice(0, 3)
+  // 항상 3장: 1) 데스크탑 히어로 실시간 캡처 2) 저장 이미지(og) 또는 태블릿 캡처 3) 모바일 캡처
+  const ogStored = stored.find(s => !s.includes('image.thum.io'))
+  const images: string[] = [thum(1280, 800), ogStored ?? thum(768, 1024), thum(390, 844)]
   const descSections = parseDescription(app.description)
 
   return (
